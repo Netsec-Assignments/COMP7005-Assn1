@@ -1,0 +1,73 @@
+Protocol Design Doc
+===================
+
+Errors and handling them
+*   File doesn't exist
+    []  Client: output error and stop
+    []  Server: send some kind of error packet to client and stop
+*   Can't create/open file
+    []  Client: output error and stop
+    []  Server: send error packet and signal the client not to continue with sending the file
+*   File write fails
+    []  Client: read the rest of the file from the server and discard it (flush the buffer), then delete the file
+    []  Server: read the rest of the file from the client and discard it (flush the buffer), then delete the file
+        ->  is there a way to indicate to the client that this failed?
+*   File read fails
+    []  ...Timeout? Pretty much the only way
+*   Socket communication breaks unexpectedly (i.e., RST)
+    []  Both: if receiving a file, delete it and output an error; if sending, stop
+
+GET
+---
+~~Client-side~~
+*   Client opens file with given name in 'w' (write/truncate) mode
+*   If opening fails, output error and stop
+*   Client creates get_packet with requested file name
+*   Client sends get_packet
+*   Client listens for packet_type
+*   If packet_type == SEND
+    []  skip file name size and file name (should be the same as what we sent)
+    []  read file_size
+    []  receive_file(file, file_size, socket_)
+*   Else if packet type == ERROR
+    []  read err_size
+    []  read err
+    []  output error
+    []  if the file didn't exist before, delete it; otherwise, just close it
+    []  return
+
+~~Server-side~~
+*   Server listens for packet_type
+*   Server receives packet type == GET
+*   If server has the file
+    []  server tries to open the file for reading
+    []  if it fails, create error_packet with "I/O error" or something, send it back, and stop
+    []  server creates send_packet with file name
+    []  server sends send_packet
+    []  send_file(file_name, socket_)
+*   Else
+    []  server creates error_packet with contents "No such file " + file
+    []  server sends error_packet
+
+SEND
+----
+~~Client-side~~
+*   Client checks whether file exists
+*   If yes
+    []  Client creates send_packet with file name
+    []  Client sends send_packet
+    []  Client listens for packet_type
+    []  If packet_type == GET, skips through the bytes and send_file(file_name, socket_)
+    []  If packet_type == ERROR, reads error packet, displays error, and returns
+*   If no
+    []  Output error
+
+~~Server-side~~
+*   Server listens for packet type
+*   Server receives packet type == SEND
+*   Server reads file name size and file name
+*   Server opens file with that name (creating it if it doesn't exist, overwriting if it does)
+    []  If file opening fails, send create error_packet with "Server unable to create file."
+    []  If not
+        ->  server reads size of file
+        ->  receive_file(filename_
