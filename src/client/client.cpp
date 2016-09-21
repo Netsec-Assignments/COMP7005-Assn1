@@ -16,13 +16,16 @@ client::client(io_service& service, std::string& host)
     boost::asio::connect(socket_, endpoint_iterator);
 }
 
+void client::get(std::string& filename) {
+    // Do stuff
+}
+
 void client::send(std::string& filename) {
     if(!exists(filename)) {
-        std::cerr << "File " << filename << "doesn't exist!" << std::endl;
+        std::cerr << "File \"" << filename << "\" doesn't exist!" << std::endl;
+        return;
     }
 
     uint32_t size = (uint32_t)file_size(filename);
-    request_packet r{SEND, size};
-
-        
+    request_packet r{SEND, size};        
 }

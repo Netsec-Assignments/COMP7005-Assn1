@@ -3,4 +3,4 @@ set(SOURCES main.cpp
             client.cpp)
 
 add_executable(client ${SOURCES})
-target_link_libraries(client libboost_filesystem libboost_system)
+target_link_libraries(client boost_filesystem boost_system pthread)
