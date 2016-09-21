@@ -1,5 +1,5 @@
 #include <string>
-#include <boost/asio/asio.hpp>
+#include <boost/asio.hpp>
 
 class client {
 
@@ -11,5 +11,5 @@ public:
 
 private:
     boost::asio::io_service& service_;
-    boost::asio::ip::tcp:: socket_;
+    boost::asio::ip::tcp::socket socket_;
 };
