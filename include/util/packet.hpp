@@ -63,7 +63,7 @@ struct send_packet : public packet {
     : send_packet() {
         boost::asio::read(sock, boost::asio::buffer(&this->name_size, sizeof(uint32_t)));
         this->name = new char[this->name_size];
-        boost::asio::read(sock, boost::asio::buffer(&this->name, this->name_size));
+        boost::asio::read(sock, boost::asio::buffer(this->name, this->name_size));
         boost::asio::read(sock, boost::asio::buffer(&this->file_size, sizeof(uint32_t)));
     }
 
@@ -87,7 +87,7 @@ struct send_packet : public packet {
         offset += sizeof(uint32_t);
         memcpy(buf + offset, &this->name_size, sizeof(uint32_t));
         offset += sizeof(uint32_t);
-        memcpy(buf + offset, &this->name, this->name_size);
+        memcpy(buf + offset, this->name, this->name_size);
         offset += this->name_size;
         memcpy(buf + offset, &this->file_size, sizeof(uint32_t));
         return buf;
@@ -132,7 +132,7 @@ struct get_packet : public packet {
         offset += sizeof(uint32_t);
         memcpy(buf + offset, &this->name_size, sizeof(uint32_t));
         offset += sizeof(uint32_t);
-        memcpy(buf + offset, &this->name, this->name_size);
+        memcpy(buf + offset, this->name, this->name_size);
         return buf;
     }
 };
@@ -146,7 +146,7 @@ struct error_packet : public packet {
     uint32_t err_size;
     char* err;
 
-    error_packet(std::string& error)
+    error_packet(std::string const& error)
     : packet(ERROR), err(new char[error.size() + 1]), err_size(error.size()) {
         std::strcpy(this->err, error.c_str());
     }
@@ -176,7 +176,7 @@ struct error_packet : public packet {
         offset += sizeof(uint32_t);
         memcpy(buf + offset, &this->err_size, sizeof(uint32_t));
         offset += sizeof(uint32_t);
-        memcpy(buf + offset, &this->err, this->err_size);
+        memcpy(buf + offset, this->err, this->err_size);
         return buf;
     }
 };

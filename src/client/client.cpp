@@ -56,7 +56,8 @@ void client::send(std::string& file_name) {
 
     // Send a send_packet and the file to the server
     uint32_t size = (uint32_t)boost::filesystem::file_size(file_name);
-    send_packet s{file_name, size};
+    std::string file_name_stripped(boost::filesystem::path(file_name).filename().c_str());
+    send_packet s{file_name_stripped, size};
     if(!s.send(socket_)) return;
 
     send_file(file, socket_);
