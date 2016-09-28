@@ -3,6 +3,8 @@
 #include <cstdint>
 #include <string>
 #include <cstring>
+#include <stdexcept>
+#include <util/net_interface.h>
 
 enum packet_type : uint32_t {
     GET,
@@ -21,22 +23,21 @@ struct packet {
 
     /**
      * Writes the packet to a socket.
-     * @param sock The socket on which to send this packet.
+     * @param iface The network interface on which to send this packet.
      */
-    bool send(boost::asio::ip::tcp::socket& sock) const {
+    bool send(net_interface& iface) const {
         size_t packet_size;
         void* serialised = this->serialise(packet_size);
-
+        bool ret = true;
         try {
-            boost::asio::write(sock, boost::asio::buffer(serialised, packet_size));
-        } catch(boost::system::error_code& err) {
-            std::cerr << "Error while sending packet: " << err << std::endl;
-            free(serialised);
-            return false;
+            iface.send(serialised, packet_size);
+        } catch(net_interface::error& e) {
+            std::cerr << "Error while sending packet: " << e.what() << std::endl;
+            ret = false;
         }
         
         free(serialised);
-        return true;
+        return ret;
     }
 };
 
@@ -59,12 +60,12 @@ struct send_packet : public packet {
      * Deserialises a send_packet from the given socket.
      * @param sock The socket from which to read the send_packet.
      */
-    send_packet(boost::asio::ip::tcp::socket& sock)
+    send_packet(net_interface& iface)
     : send_packet() {
-        boost::asio::read(sock, boost::asio::buffer(&this->name_size, sizeof(uint32_t)));
+        iface.receive(&this->name_size, sizeof(uint32_t));
         this->name = new char[this->name_size];
-        boost::asio::read(sock, boost::asio::buffer(this->name, this->name_size));
-        boost::asio::read(sock, boost::asio::buffer(&this->file_size, sizeof(uint32_t)));
+        iface.receive(this->name, this->name_size);
+        iface.receive(&this->file_size, sizeof(uint32_t));
     }
 
     // Default constructor for the receiving side
@@ -107,11 +108,11 @@ struct get_packet : public packet {
         std::strcpy(name, file_name.c_str());
     }
 
-    get_packet(boost::asio::ip::tcp::socket& sock)
+    get_packet(net_interface& iface)
     : get_packet() {
-        boost::asio::read(sock, boost::asio::buffer(&this->name_size, sizeof(uint32_t)));
+        iface.receive(&this->name_size, sizeof(uint32_t));        
         this->name = new char[this->name_size];
-        boost::asio::read(sock, boost::asio::buffer(this->name, this->name_size));
+        iface.receive(this->name, this->name_size);
     }
 
     get_packet()
@@ -151,11 +152,11 @@ struct error_packet : public packet {
         std::strcpy(this->err, error.c_str());
     }
 
-    error_packet(boost::asio::ip::tcp::socket& sock)
+    error_packet(net_interface& iface)
     : error_packet() {
-        boost::asio::read(sock, boost::asio::buffer(&this->err_size, sizeof(uint32_t)));
+        iface.receive(&this->err_size, sizeof(uint32_t));
         this->err = new char[this->err_size];
-        boost::asio::read(sock, boost::asio::buffer(this->err, this->err_size));
+        iface.receive(this->err, this->err_size);
     }
 
     error_packet()

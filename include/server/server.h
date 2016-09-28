@@ -4,6 +4,7 @@
 #include <boost/filesystem.hpp>
 #include <string>
 #include <unordered_set>
+#include <util/net_interface.h>
 
 class server {
 
@@ -38,6 +39,6 @@ private:
     // A list of the files in the storage directory so that it doesn't have to be searched every time
     std::unordered_set<std::string> files_;
 
-    void handle_send_request(boost::asio::ip::tcp::socket& sock);
-    void handle_get_request(boost::asio::ip::tcp::socket& sock);
+    void handle_send_request(net_interface& control_interface, net_interface& data_interface);
+    void handle_get_request(net_interface& control_interface, net_interface& data_interface);
 };

@@ -5,6 +5,7 @@
 #include <fstream>
 #include <string>
 #include <stdexcept>
+#include <util/net_interface.h>
 
 const std::size_t BUF_SIZE = 1024;
 
@@ -16,7 +17,7 @@ const std::size_t BUF_SIZE = 1024;
  *
  * @return true if the file was successfully sent; false if not.
  */
-bool send_file(std::ifstream& file, boost::asio::ip::tcp::socket& sock) {
+bool send_file(std::ifstream& file, net_interface& iface) {
     char buf[BUF_SIZE];
     boost::system::error_code error;
 
@@ -29,9 +30,11 @@ bool send_file(std::ifstream& file, boost::asio::ip::tcp::socket& sock) {
         } else if(file.gcount() == 0) {
             break;
         }
-        boost::asio::write(sock, boost::asio::buffer(buf, file.gcount()), boost::asio::transfer_all(), error);
-        if (error) {
-            std::cerr << "Error while sending file: " << error << std::endl;
+
+        try {
+            iface.send(buf, file.gcount());
+        } catch(net_interface::error& e) {
+            std::cerr << "Network error while sending file: " << e.what() << std::endl;
             return false;
         }
     }
@@ -45,7 +48,7 @@ bool send_file(std::ifstream& file, boost::asio::ip::tcp::socket& sock) {
  * @param file_size The size (in bytes) of the file being transmitted.
  * @param sock      The socket over which to receive the file.
  */
-bool receive_file(std::ofstream& file, unsigned int file_size, boost::asio::ip::tcp::socket& sock) {
+bool receive_file(std::ofstream& file, unsigned int file_size, net_interface& iface) {
     char buf[BUF_SIZE];
 
     // Figure out how many full BUF_SIZE chunks we'll read and
@@ -60,9 +63,10 @@ bool receive_file(std::ofstream& file, unsigned int file_size, boost::asio::ip::
     for(int i = 0; i < num_reads; ++i) {
         // Hackily check whether we need to read a whole BUF_SIZE chunk or just the last bytes
         size_t bytes_to_read = last_bytes && (i == num_reads - 1) ? last_bytes : BUF_SIZE;
-        boost::asio::read(sock, boost::asio::buffer(buf, BUF_SIZE), boost::asio::transfer_exactly(bytes_to_read), error);
-        if(error) {
-            std::cerr << "Error while receiving file: " << error << std::endl;
+        try {        
+            iface.receive(buf, bytes_to_read);
+        } catch(net_interface::error& e) {
+            std::cerr << "Network error while receiving file: " << e.what() << std::endl;
             return false;
         }
         
@@ -72,12 +76,12 @@ bool receive_file(std::ofstream& file, unsigned int file_size, boost::asio::ip::
             file.write(buf, bytes_to_read);
             if(!file) {
                 std::cerr << "Error while writing to file" << std::endl;
-                return false;
+                file_had_error = true;
             }
         }
     }
 
-    return true;
+    return !file_had_error;
 }
 
 /**

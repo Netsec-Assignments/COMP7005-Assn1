@@ -3,6 +3,7 @@
 #include <string>
 #include <boost/asio.hpp>
 #include <boost/filesystem.hpp>
+#include <util/boost_net_interface.hpp>
 
 class client {
 
@@ -24,7 +25,11 @@ public:
     void send(std::string& file_path);
 
 private:
+    // Never thought I'd actually rely on construction order... We need the sockets to be constructed first
     boost::asio::io_service& service_;
-    boost::asio::ip::tcp::socket socket_;
+    boost::asio::ip::tcp::socket control_socket_;
+    boost::asio::ip::tcp::socket data_socket_;
+    boost_net_interface control_interface_;
+    boost_net_interface data_interface_;
     boost::filesystem::path storage_path_;
 };

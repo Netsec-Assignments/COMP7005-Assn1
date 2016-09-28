@@ -38,8 +38,6 @@ int main(int argc, char** argv) {
 
     try {
         client c(service, host_name, storage_path);
-
-        std::cout << "Connected to " << host_name << std::endl;
         std::cout << std::endl;
 
         std::cout << "File names are relative to the storage path supplied." << std::endl;
