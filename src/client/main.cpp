@@ -27,20 +27,22 @@ bool parse_command(std::string& command, packet_type& op, std::string& filename)
 }
 
 int main(int argc, char** argv) {
-    if(argc != 2) {
-        std::cerr << "usage: " << argv[0] << " [host name]" << std::endl;
+    if(argc != 3) {
+        std::cerr << "usage: " << argv[0] << " [host name] [file storage path]" << std::endl;
         return 1;
     }
 
     boost::asio::io_service service;
     std::string host_name(argv[1]);
+    std::string storage_path(argv[2]);
 
     try {
-        client c(service, host_name);
+        client c(service, host_name, storage_path);
 
         std::cout << "Connected to " << host_name << std::endl;
         std::cout << std::endl;
 
+        std::cout << "File names are relative to the storage path supplied." << std::endl;
         std::cout << "Type SEND [filename] to send a file to the server." << std::endl;
         std::cout << "Type GET [filename] to get a file from the server." << std::endl;
         std::cout << "Type Ctrl + D to quit" << std::endl;

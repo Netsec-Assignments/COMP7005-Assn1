@@ -29,9 +29,6 @@ public:
      */
     void start();
 
-    /**
-     * Causes the server to shut down any 
-     */
 private:
     boost::asio::io_service& service_;
     boost::asio::ip::tcp::acceptor acceptor_;

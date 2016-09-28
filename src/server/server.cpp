@@ -14,32 +14,16 @@ server::server(boost::asio::io_service& service, std::string& storage_path)
     }
     
     // Make sure that we can read/write from/to the directory
-    // Apparently the only portable, guaranteed way to do this is to actually read/write from/to the directory
-    // Go figure
-
-    // Check readability
-    try {
-        auto it = boost::filesystem::directory_iterator(storage_path);
-
-        if(!boost::filesystem::is_empty(storage_path)) {
-            for(; it != boost::filesystem::directory_iterator(); ++it) {
-                boost::filesystem::path p = it->path();
-                files_.emplace(p.filename().c_str());
-            }
-        }
-    } catch(boost::filesystem::filesystem_error& err) {
-        throw std::invalid_argument("storage path isn't readable");
+    if(!dir_is_read_write(storage_path)) {
+        throw std::invalid_argument("can't read from and/or write to directory");
     }
 
-    // Check writeabiliy (partially stolen from http://en.cppreference.com/w/cpp/io/c/remove)
-    boost::filesystem::path test_path(storage_path);
-    test_path /= "file1.txt";
-
-    bool ok = static_cast<bool>(std::ofstream(test_path.c_str()).put('a'));
-    if(!ok) {
-        throw std::invalid_argument("storage path isn't writeable");
-    } else {
-        std::remove(test_path.c_str());
+    boost::filesystem::directory_iterator it(storage_path);
+    if(!boost::filesystem::is_empty(storage_path)) {
+        for(; it != boost::filesystem::directory_iterator(); ++it) {
+            boost::filesystem::path p = it->path();
+            files_.emplace(p.filename().c_str());
+        }
     }
 
     // Initialise the acceptor
@@ -70,6 +54,34 @@ void server::handle_send_request(boost::asio::ip::tcp::socket& sock) {
     } else {
         file.close();
         std::cout << "Successfully received file and stored at " << file_path.c_str() << '.' << std::endl;
+        files_.emplace(s.name);
+    }
+}
+
+void server::handle_get_request(boost::asio::ip::tcp::socket& sock) {
+    get_packet g{sock};
+    
+    auto it = files_.find(g.name);
+
+    // Check whether the file exists; if not, send back an error packet
+    if(it == files_.end()) {
+        std::string s("Couldn't find file ");
+        std::ostringstream oss(s);
+        oss << g.name << '.';
+        error_packet e{oss.str()};
+        
+        e.send(sock);
+    } else {
+        boost::filesystem::path file_path(storage_path_);
+        file_path /= g.name;
+
+        // Send back a send_packet so that the client knows we're sending the file
+        std::uint32_t size = boost::filesystem::file_size(file_path);
+        send_packet s{std::string(file_path.c_str()), size};
+        s.send(sock);
+        
+        std::ifstream file(file_path.c_str());
+        send_file(file, sock);
     }
 }
 
@@ -90,6 +102,7 @@ void server::start() {
                         handle_send_request(sock);
                         break;
                     case GET:
+                        handle_get_request(sock);
                         break;
                     default:
                         break;

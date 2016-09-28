@@ -1,9 +1,10 @@
 #pragma once
 
 #include <boost/asio.hpp>
-#include <boost/array.hpp>
+#include <boost/filesystem.hpp>
 #include <fstream>
 #include <string>
+#include <stdexcept>
 
 const std::size_t BUF_SIZE = 1024;
 
@@ -74,6 +75,37 @@ bool receive_file(std::ofstream& file, unsigned int file_size, boost::asio::ip::
                 return false;
             }
         }
+    }
+
+    return true;
+}
+
+/**
+ * Checks whether storage_path is readable and writeable.
+ *
+ * @param storage_path The path to check for read/write access.
+ * @throws std::invalid_argument if the path isn't readable or writeable.
+ */
+bool dir_is_read_write(std::string& storage_path) {
+    // Apparently the only portable, guaranteed way to do this is to actually read/write from/to the directory        
+    // Go figure
+
+    // Check readability
+    try {
+        auto it = boost::filesystem::directory_iterator(storage_path);
+    } catch(boost::filesystem::filesystem_error& err) {
+        return false;
+    }
+
+    // Check writeabiliy (partially stolen from http://en.cppreference.com/w/cpp/io/c/remove)
+    boost::filesystem::path test_path(storage_path);
+    test_path /= "file1.txt";
+
+    bool ok = static_cast<bool>(std::ofstream(test_path.c_str()).put('a'));
+    if(!ok) {
+        return false;
+    } else {
+        std::remove(test_path.c_str());
     }
 
     return true;

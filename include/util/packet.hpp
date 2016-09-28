@@ -50,7 +50,7 @@ struct send_packet : public packet {
     uint32_t file_size;
 
     // Constructor for the sending side
-    send_packet(std::string& f_name, uint32_t f_size)
+    send_packet(std::string const& f_name, uint32_t f_size)
     : packet(SEND), name(new char[f_name.size() + 1]), name_size(f_name.size() + 1), file_size(f_size) {
         std::strcpy(this->name, f_name.c_str());
     }
@@ -102,7 +102,7 @@ struct get_packet : public packet {
     uint32_t name_size;
     char* name;
 
-    get_packet(std::string& file_name)
+    get_packet(std::string const& file_name)
     : packet(GET), name(new char[file_name.size() + 1]), name_size(file_name.size() + 1) {
         std::strcpy(name, file_name.c_str());
     }
@@ -111,7 +111,7 @@ struct get_packet : public packet {
     : get_packet() {
         boost::asio::read(sock, boost::asio::buffer(&this->name_size, sizeof(uint32_t)));
         this->name = new char[this->name_size];
-        boost::asio::read(sock, boost::asio::buffer(&this->name, this->name_size));
+        boost::asio::read(sock, boost::asio::buffer(this->name, this->name_size));
     }
 
     get_packet()
@@ -155,7 +155,7 @@ struct error_packet : public packet {
     : error_packet() {
         boost::asio::read(sock, boost::asio::buffer(&this->err_size, sizeof(uint32_t)));
         this->err = new char[this->err_size];
-        boost::asio::read(sock, boost::asio::buffer(&this->err, this->err_size));
+        boost::asio::read(sock, boost::asio::buffer(this->err, this->err_size));
     }
 
     error_packet()
