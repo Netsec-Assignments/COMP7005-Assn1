@@ -56,9 +56,7 @@ SEND
 *   If yes
     []  Client creates send_packet with file name
     []  Client sends send_packet
-    []  Client listens for packet_type
-    []  If packet_type == GET, skips through the bytes and send_file(file_name, socket_)
-    []  If packet_type == ERROR, reads error packet, displays error, and returns
+    []  Client sends the file
 *   If no
     []  Output error
 
@@ -67,7 +65,7 @@ SEND
 *   Server receives packet type == SEND
 *   Server reads file name size and file name
 *   Server opens file with that name (creating it if it doesn't exist, overwriting if it does)
-    []  If file opening fails, send create error_packet with "Server unable to create file."
+    []  If file opening fails, server silently reads everything sent by the client and deletes the file
     []  If not
         ->  server reads size of file
-        ->  receive_file(filename_
+        ->  receive_file(filename)
