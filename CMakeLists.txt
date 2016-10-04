@@ -10,4 +10,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 cmake_policy(VERSION 2.6) 
 link_directories(${CMAKE_SOURCE_DIR}/lib)
 
+if(UNIX)
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11")
+endif()
+
 add_subdirectory(src)
