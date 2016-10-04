@@ -28,8 +28,9 @@ private:
     // Never thought I'd actually rely on construction order... We need the sockets to be constructed first
     boost::asio::io_service& service_;
     boost::asio::ip::tcp::socket control_socket_;
-    boost::asio::ip::tcp::socket data_socket_;
     boost_net_interface control_interface_;
-    boost_net_interface data_interface_;
     boost::filesystem::path storage_path_;
+
+    // Attempts to accept an incoming data port connection on out. Throws on failure.
+    void accept_data_channel_conn(boost::asio::ip::tcp::socket& out);
 };

@@ -37,7 +37,24 @@ server::server(asio::io_service& service, std::string& storage_path)
     acceptor_.bind(endpoint);
 }
 
-void server::handle_send_request(net_interface& control_interface, net_interface& data_interface) {
+void server::connect_to_data_channel(const boost::asio::ip::tcp::socket& control_socket, boost::asio::ip::tcp::socket& out) {
+        // Connect to the client's data port (7006)
+        std::ostringstream oss;
+        oss << DATA_PORT;
+
+        tcp::endpoint remote_end = control_socket.remote_endpoint();
+        std::string address = remote_end.address().to_string();
+
+        // Open a connection on port 7006 to the client to send off the file
+        tcp::resolver resolver{service_};
+        tcp::resolver::query query{remote_end.address().to_string(), oss.str()};
+        auto endpoint_iterator = resolver.resolve(query);
+        
+        asio::connect(out, endpoint_iterator);
+        std::cout << "Connected to client on data channel (port " << DATA_PORT << ")." << std::endl;
+}
+
+void server::handle_send_request(net_interface& control_interface) {
     send_packet s{control_interface};
     fs::path file_path(storage_path_);
 
@@ -53,6 +70,16 @@ void server::handle_send_request(net_interface& control_interface, net_interface
         return;
     }
 
+    tcp::socket data_sock(service_);
+    try {
+        connect_to_data_channel(((boost_net_interface*)&control_interface)->get_socket(), data_sock);
+    } catch(std::exception& e) {
+        std::cerr << "Error while initiating connection to client on data port." << std::endl;
+        return;
+    }
+
+    boost_net_interface data_interface(data_sock);
+
     if(!receive_file(file, s.file_size, data_interface)) {
         file.close();
         std::remove(file_path.c_str());
@@ -64,7 +91,7 @@ void server::handle_send_request(net_interface& control_interface, net_interface
     }
 }
 
-void server::handle_get_request(net_interface& control_interface, net_interface& data_interface) {
+void server::handle_get_request(net_interface& control_interface) {
     get_packet g{control_interface};
     
     auto it = files_.find(g.name);
@@ -94,6 +121,16 @@ void server::handle_get_request(net_interface& control_interface, net_interface&
         
         std::ifstream file(file_path.c_str());
         
+        tcp::socket data_sock(service_);
+        try {
+            connect_to_data_channel(((boost_net_interface*)&control_interface)->get_socket(), data_sock);
+        } catch(std::exception& e) {
+            std::cerr << "Error while initiating connection to client on data port." << std::endl;
+            return;
+        }
+
+        boost_net_interface data_interface(data_sock);
+
         try {
             send_file(file, data_interface);
             std::cout << "Successfully sent file." << std::endl;
@@ -110,32 +147,10 @@ void server::start() {
         acceptor_.listen();
         acceptor_.accept(control_sock);      
 
-        // Connect to the client's data port (7006)
-        tcp::socket data_sock(service_);
-        std::ostringstream oss;
-        oss << DATA_PORT;
-
-        system::error_code ec;
-        tcp::endpoint remote_end = control_sock.remote_endpoint(ec);
-        std::string address = remote_end.address().to_string();
-        if(ec) {
-            std::cerr << "Error while trying to connect to other socket: " << ec << std::endl;
-            continue;
-        }
-
-        std::cout << "Accepted connection from " << address << " on control channel (port " << CONTROL_PORT << ")." << std::endl;
-
-        tcp::resolver resolver{service_};
-        tcp::resolver::query query{remote_end.address().to_string(), oss.str()};
-        auto endpoint_iterator = resolver.resolve(query);
+        std::cout << "Accepted connection from " << control_sock.remote_endpoint().address().to_string() << " on control channel (port " << CONTROL_PORT << ")." << std::endl;
         
-        asio::connect(data_sock, endpoint_iterator);
-
-        std::cout << "Connected to client on data channel (port " << DATA_PORT << ")." << std::endl;
-        
-        // Wrap both socket objects in net_interfaces; we'll later swap these out for an
+        // Wrap the socket objects in a net_interface; we'll later swap this out for an
         // interface that performs additional packetizing for the final project
-        boost_net_interface data_interface(data_sock);
         boost_net_interface control_interface(control_sock);
 
         // Read packets from the control socket until the client disconnects
@@ -146,10 +161,10 @@ void server::start() {
                 control_interface.receive(&pt, sizeof(packet_type));
                 switch(pt) {
                     case SEND:
-                        handle_send_request(control_interface, data_interface);
+                        handle_send_request(control_interface);
                         break;
                     case GET:
-                        handle_get_request(control_interface, data_interface);
+                        handle_get_request(control_interface);
                         break;
                     default:
                         break;

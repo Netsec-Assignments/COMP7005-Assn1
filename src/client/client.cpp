@@ -9,7 +9,7 @@ using boost::asio::io_service;
 using boost::asio::ip::tcp;
 
 client::client(io_service& service, std::string& host, std::string& storage_path)
-: service_(service), data_socket_(service_), control_socket_(service_), control_interface_(control_socket_), data_interface_(data_socket_), storage_path_(storage_path) {
+: service_(service), control_socket_(service_), control_interface_(control_socket_), storage_path_(storage_path) {
 
     // Check whether the path is a directory, and if so, whether we have read-write access to it
     // throw invalid argument exception if either case is false
@@ -31,17 +31,19 @@ client::client(io_service& service, std::string& host, std::string& storage_path
     boost::asio::connect(control_socket_, endpoint_iterator);
 
     std::cout << "Connected to server on control channel (port " << CONTROL_PORT << ")." << std::endl;
+}
 
+void client::accept_data_channel_conn(boost::asio::ip::tcp::socket& out) {
     // Connect the data socket on port 7006
     boost::asio::ip::tcp::endpoint endpoint(boost::asio::ip::tcp::v4(), DATA_PORT);
     boost::asio::ip::tcp::acceptor a(service_);
+
     a.open(endpoint.protocol());
     a.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
     a.bind(endpoint);
     a.listen();
     
-    a.accept(data_socket_);
-
+    a.accept(out);
     std::cout << "Received connection from server on data channel (port " << DATA_PORT << ")." << std::endl;
 }
 
@@ -66,12 +68,25 @@ void client::get(std::string& file_name) {
     control_interface_.receive(&pt, sizeof(packet_type));
     if(pt == SEND) {
         send_packet sp(control_interface_); // Deseriliase the send packet
-        receive_file(file, sp.file_size, data_interface_);
+
+        boost::asio::ip::tcp::socket data_sock(service_);
+        try {
+            accept_data_channel_conn(data_sock);
+        } catch(std::exception& e) {
+            std::cerr << "Error while accepting server data connection: " << e.what() << std::endl;
+            return;
+        }
+        boost_net_interface data_interface(data_sock);
+
+        receive_file(file, sp.file_size, data_interface);
         std::cout << "Successfully retrieved file." << std::endl;
     } else if(pt == ERROR) {
         error_packet ep(control_interface_);
         std::cerr << "Server reported error: " << ep.err << std::endl;
+        std::remove(file_path.c_str());
     }
+
+    // Data socket will be closed upon leaving this function.
 }
 
 void client::send(std::string& file_path) {
@@ -103,7 +118,16 @@ void client::send(std::string& file_path) {
         return;
     }
 
-    if(send_file(file, data_interface_)) {
+    boost::asio::ip::tcp::socket data_sock(service_);
+    try {
+        accept_data_channel_conn(data_sock);
+    } catch(std::exception& e) {
+        std::cerr << "Error while accepting server data connection: " << e.what() << std::endl;
+        return;
+    }
+    boost_net_interface data_interface(data_sock);
+
+    if(send_file(file, data_interface)) {
         std::cout << "Successfully sent file." << std::endl;
     } else {
         std::cout << "Sending file was unsuccessful." << std::endl;

@@ -38,6 +38,10 @@ public:
         }
     }
 
+    const boost::asio::ip::tcp::socket& get_socket() {
+        return sock_;
+    }
+
 private:
     boost::asio::ip::tcp::socket& sock_;
 };

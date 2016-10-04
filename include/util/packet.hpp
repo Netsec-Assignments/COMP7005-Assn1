@@ -81,7 +81,7 @@ struct send_packet : public packet {
 
     virtual void* serialise(size_t& size) const {
         size = (sizeof(uint32_t) * 2) + sizeof(packet_type) + name_size;
-        void* buf = malloc(size);
+        unsigned char* buf = (unsigned char*)malloc(size);
         size_t offset = 0;
 
         memcpy(buf + offset, &this->p_type, sizeof(uint32_t));
@@ -128,7 +128,7 @@ struct get_packet : public packet {
         size = sizeof(uint32_t) + this->name_size + sizeof(this->p_type);
 
         size_t offset = 0;
-        void* buf = malloc(size);
+        unsigned char* buf = (unsigned char*)malloc(size);
         memcpy(buf + offset, &this->p_type, sizeof(uint32_t));
         offset += sizeof(uint32_t);
         memcpy(buf + offset, &this->name_size, sizeof(uint32_t));
@@ -171,7 +171,7 @@ struct error_packet : public packet {
     virtual void* serialise(size_t& size) const {
         size = sizeof(uint32_t) + err_size + sizeof(this->p_type);
 
-        void* buf = malloc(size);
+        unsigned char* buf = (unsigned char*)malloc(size);
         size_t offset = 0;
         memcpy(buf + offset, &this->p_type, sizeof(uint32_t));
         offset += sizeof(uint32_t);

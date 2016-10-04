@@ -39,6 +39,9 @@ private:
     // A list of the files in the storage directory so that it doesn't have to be searched every time
     std::unordered_set<std::string> files_;
 
-    void handle_send_request(net_interface& control_interface, net_interface& data_interface);
-    void handle_get_request(net_interface& control_interface, net_interface& data_interface);
+    void handle_send_request(net_interface& control_interface);
+    void handle_get_request(net_interface& control_interface);
+
+    // Attempts to connect to control_sock.remote_endpoint(); throws on failure, otherwise out will be a socket connected to port 7006
+    void connect_to_data_channel(const boost::asio::ip::tcp::socket& control_sock, boost::asio::ip::tcp::socket& out);
 };

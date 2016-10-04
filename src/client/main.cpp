@@ -12,7 +12,6 @@ bool parse_command(std::string& command, packet_type& op, std::string& filename)
     boost::split(command_parts, command, boost::is_any_of(" "));
 
     if(command_parts.size() < 2 || (command_parts[0] != "GET" && command_parts[0] != "SEND")) {
-        std::cout << command << std::endl;
         return false;
     } else {
         // Figure out the operation

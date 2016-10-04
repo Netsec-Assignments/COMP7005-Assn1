@@ -16,9 +16,8 @@ int main(int argc, char** argv) {
         // Might figure out how to thread this later, but for now just Ctrl + C out of it
         server s(service, p);
         s.start();
-    } catch(boost::system::error_code& ec) {
-        std::cerr << "Error: " << ec << std::endl;
-        return 1;
+    } catch(std::exception& e) {
+        std::cerr << "Error: " << e.what() << std::endl;
     }
 
     return 0;
