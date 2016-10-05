@@ -1,3 +1,13 @@
+/* ========================================================================
+   $HEADER FILE
+   $File: client.h $
+   $Program: $
+   $Developer: Shane Spoor $
+   $Created On: 2016/09/22 $
+   $Description: $
+   $    Header file for the client
+   $Revisions: $
+   ======================================================================== */
 #pragma once
 
 #include <string>

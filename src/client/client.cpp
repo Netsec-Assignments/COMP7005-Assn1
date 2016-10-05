@@ -1,3 +1,12 @@
+/* ========================================================================
+   $File: client.cpp $
+   $Program: $
+   $Developer: Shane Spoor $
+   $Created On: 2016/09/22 $
+   $Description: $
+   $     This is the client portion of the program 
+   $Revisions: $
+   ======================================================================== */
 #include <iostream>
 #include <client/client.h>
 #include <boost/filesystem.hpp>
@@ -8,8 +17,17 @@
 using boost::asio::io_service;
 using boost::asio::ip::tcp;
 
+/* ========================================================================
+   $ FUNCTION
+   $ Name: client() $
+   $ Prototype: (io_service& service, std::string& host, std::string& storage_path): service_(service), control_socket_(service_), control_interface_(control_socket_), storage_path_(storage_path) { $
+   $ Params: 
+   $    name: The name of the program $
+   $ Description:  $
+   $    The constructor for the client 
+   ======================================================================== */
 client::client(io_service& service, std::string& host, std::string& storage_path)
-: service_(service), control_socket_(service_), control_interface_(control_socket_), storage_path_(storage_path) {
+        : service_(service), control_socket_(service_), control_interface_(control_socket_), storage_path_(storage_path) {
 
     // Check whether the path is a directory, and if so, whether we have read-write access to it
     // throw invalid argument exception if either case is false
@@ -47,6 +65,15 @@ void client::accept_data_channel_conn(boost::asio::ip::tcp::socket& out) {
     std::cout << "Received connection from server on data channel (port " << DATA_PORT << ")." << std::endl;
 }
 
+/* ========================================================================
+   $ FUNCTION
+   $ Name: client::get $
+   $ Prototype: void client::get(std::string& file_name) { $
+   $ Params: 
+   $    file_name: The name of the file to get from the server $
+   $ Description:  $
+   $   get the file from the server
+   ======================================================================== */
 void client::get(std::string& file_name) {
     boost::filesystem::path file_path(storage_path_);
     std::string actual_name(boost::filesystem::path(file_name).filename().c_str());
@@ -89,6 +116,15 @@ void client::get(std::string& file_name) {
     // Data socket will be closed upon leaving this function.
 }
 
+/* ========================================================================
+   $ FUNCTION
+   $ Name: client::send $
+   $ Prototype: void client::send(std::string& file_path) { $
+   $ Params: 
+   $    file_path: The path  of the file $
+   $ Description:  $
+   $   Send a file to the server
+   ======================================================================== */
 void client::send(std::string& file_path) {
     boost::filesystem::path path(storage_path_);
     std::string name(boost::filesystem::path(file_path).filename().c_str());

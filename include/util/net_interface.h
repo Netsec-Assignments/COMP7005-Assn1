@@ -1,3 +1,13 @@
+/* ========================================================================
+   $HEADER FILE
+   $File: net_interface.h $
+   $Program: $
+   $Developer: Shane Spoor $
+   $Created On: 2016/09/22 $
+   $Description: $
+   $    net_interface header file
+   $Revisions: $
+   ======================================================================== */
 #ifndef NET_INTERFACE_H
 #define NET_INTERFACE_H
 

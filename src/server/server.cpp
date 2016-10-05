@@ -1,3 +1,11 @@
+/* ========================================================================
+   $File: server.cpp $
+   $Program: $
+   $Developer: Mat Siwoski/Shane Spoor $
+   $Created On: 2016/09/23 $
+   $Description: $ Server program
+   $Revisions: $
+   ======================================================================== */
 #include <stdexcept>
 #include <iostream>
 #include <util/file_transfer.hpp>
@@ -10,8 +18,16 @@ namespace fs = boost::filesystem;
 using namespace boost::asio::ip;
 using namespace boost;
 
-server::server(asio::io_service& service, std::string& storage_path)
-: service_(service), storage_path_(storage_path), files_{}, acceptor_(service) {
+/* ========================================================================
+   $ FUNCTION
+   $ Name: server() $
+   $ Prototype: server(asio::io_service& service, std::string& storage_path): service_(service), storage_path_(storage_path), files_{}, acceptor_(service) { $
+   $ Params: 
+   $    name: Server constructor $
+   $ Description:  $
+   ======================================================================== */
+server::server(asio::io_service& service, std::string& storage_path):
+        service_(service), storage_path_(storage_path), files_{}, acceptor_(service) {
     // Make sure the path is a directory
     if(!fs::is_directory(storage_path)) {
         throw std::invalid_argument("storage path isn't a directory");
@@ -37,6 +53,15 @@ server::server(asio::io_service& service, std::string& storage_path)
     acceptor_.bind(endpoint);
 }
 
+/* ========================================================================
+   $ FUNCTION
+   $ Name: connect_to_data_channel $
+   $ Prototype: void server::connect_to_data_channel(const boost::asio::ip::tcp::socket& control_socket, boost::asio::ip::tcp::socket& out) { $
+   $ Params: 
+   $    control_socket: control socket $
+   $    out: data channel socket
+   $ Description:  $ allows for the secondary contorl socket to connect
+   ======================================================================== */
 void server::connect_to_data_channel(const boost::asio::ip::tcp::socket& control_socket, boost::asio::ip::tcp::socket& out) {
         // Connect to the client's data port (7006)
         std::ostringstream oss;
@@ -54,6 +79,14 @@ void server::connect_to_data_channel(const boost::asio::ip::tcp::socket& control
         std::cout << "Connected to client on data channel (port " << DATA_PORT << ")." << std::endl;
 }
 
+/* ========================================================================
+   $ FUNCTION
+   $ Name: server::handle_send_request $
+   $ Prototype: void server::handle_send_request(net_interface& control_interface) { $
+   $ Params: 
+   $    control_interface: The packet information$
+   $ Description:  $ handles the send request from the client
+   ======================================================================== */
 void server::handle_send_request(net_interface& control_interface) {
     send_packet s{control_interface};
     fs::path file_path(storage_path_);
@@ -91,6 +124,15 @@ void server::handle_send_request(net_interface& control_interface) {
     }
 }
 
+/* ========================================================================
+   $ FUNCTION
+   $ Name: server::handle_get_request $
+   $ Prototype: void server::handle_get_request(net_interface& control_interface) { $
+   $ Params: 
+   $    control_interface:  $
+   $ Description:  $ 
+   $       handles the get request from the client
+   ======================================================================== */
 void server::handle_get_request(net_interface& control_interface) {
     get_packet g{control_interface};
     
@@ -140,6 +182,15 @@ void server::handle_get_request(net_interface& control_interface) {
     }
 }
 
+/* ========================================================================
+   $ FUNCTION
+   $ Name: server::start $
+   $ Prototype: void server::start() { $
+   $ Params: 
+   $ Description:  $
+   $     Starts the server by setting up the contorl sockets,
+   $     and handles the client commands
+   ======================================================================== */
 void server::start() {
     for(;;) {
         // Accept client's connection on control port (7005)

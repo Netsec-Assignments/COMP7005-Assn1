@@ -1,3 +1,13 @@
+/* ========================================================================
+   $HEADER FILE
+   $File: server.h $
+   $Program: $
+   $Developer:  Mat Siwoski/Shane Spoor $
+   $Created On: 2016/09/23 $
+   $Description: $
+   $    Header file for the client
+   $Revisions: $
+   ======================================================================== */
 #pragma once
 
 #include <boost/asio.hpp>

@@ -1,3 +1,12 @@
+/* ========================================================================
+   $File: main.cpp $
+   $Program: $
+   $Developer: Shane Spoor $
+   $Created On: 2016/09/22 $
+   $Description: $
+   $     Starts the client side of the application
+   $Revisions: $
+   ======================================================================== */
 #include <iostream>
 #include <string>
 #include <vector>
@@ -7,6 +16,17 @@
 #include <boost/asio.hpp>
 #include <boost/algorithm/string.hpp>
 
+/* ========================================================================
+   $ FUNCTION
+   $ Name: parse_command $
+   $ Prototype: bool parse_command(std::string& command, packet_type& op, std::string& filename) { $
+   $ Params: 
+   $    command: The command from the user $
+   $    op: The packet type
+   $    filename: The name of the file
+   $ Description:  $
+   $    Parses commands from the user to send to the client.
+   ======================================================================== */
 bool parse_command(std::string& command, packet_type& op, std::string& filename) {
     std::vector<std::string> command_parts;
     boost::split(command_parts, command, boost::is_any_of(" "));
@@ -25,6 +45,16 @@ bool parse_command(std::string& command, packet_type& op, std::string& filename)
     }
 }
 
+/* ========================================================================
+   $ FUNCTION
+   $ Name: main $
+   $ Prototype: int main(int argc, char** argv) { $
+   $ Params: 
+   $    argc: The number of inputs from the user $
+   $    argv: The inputs from the user
+   $ Description:  $
+   $    Starts the client application
+   ======================================================================== */
 int main(int argc, char** argv) {
     if(argc != 3) {
         std::cerr << "usage: " << argv[0] << " [host name] [file storage path]" << std::endl;
