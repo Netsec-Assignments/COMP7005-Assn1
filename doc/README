@@ -1,6 +1,6 @@
 Build Instructions
 ==================
-~~Client~~
+~~Client~~/~~Server~~
 1. Install cmake: dnf install cmake
 2. In the root directory (containing src/, doc/ etc.): mkdir build && cd build
 3. cmake ..
@@ -9,10 +9,19 @@ Build Instructions
 
 Note: if you're having C++11 problems (e.g. nullptr isn't defined), run dnf update gcc-c++ to update g++.
 
-~~Server~~
-TODO (I'll also have to change my CMakeLists.txt to not build the server)
-
-
 Running the Programs
 ====================
+To run the program:
 
+Client:
+
+1. Go to the <project root>/bin/
+2. type ./client [host address] [file path]
+3. Press enter
+4. Follow screen commands
+
+Server
+
+1. Go to the <project root>/bin/
+2. type ./server [file path]
+3. press enter
